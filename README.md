@@ -220,16 +220,16 @@ EU, como usuário, QUERO acompanhar o status da doação, PARA QUE eu saiba em q
                          
                          
    Modelo geral proposto                      
-                         ┌──────────────────────┐
-                         │       Usuario        │
-                         ├──────────────────────┤
-                         │ id                   │
+                         ┌──────────────────────┐                                                                                                  
+                         │       Usuario        │                                                                                                  
+                         ├──────────────────────┤                                                                                                  
+                         │ id                   │                                                                                                  
                          │ email                │
-                         │ senha                │
+                         │ senha                │                                                                                                  
                          │ telefone             │
-                         │ status               │
-                         │ validado             │
-                         └──────────┬───────────┘
+                         │ status               │																								
+                         │ validado             │																								
+                         └──────────┬───────────┘																								
                                     │
                   ┌─────────────────┼─────────────────┐
                   │                 │                 │
