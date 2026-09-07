@@ -218,21 +218,19 @@ EU, como usuário, QUERO acompanhar o status da doação, PARA QUE eu saiba em q
     ●	Status atualizado em tempo real.
     ●	Permissões aplicadas.                        
                          
-                         
-   Modelo geral proposto                      
-                         ┌──────────────────────┐                                                                                                  
-                         │       Usuario        │                                                                                                  
-                         ├──────────────────────┤                                                                                                  
-                         │ id                   │                                                                                                  
-                         │ email                │
-                         │ senha                │                                                                                                  
-                         │ telefone             │
-                         │ status               │																								
-                         │ validado             │																								
-                         └──────────┬───────────┘																								
-                                    │
-                  ┌─────────────────┼─────────────────┐
-                  │                 │                 │
+Modelo geral proposto                      																					            ┌─────────┐                                                                                                 
+│ Usuario │                                                                                                  
+├─────────┤                                                                                                  
+│ id      │                                                                                                  
+│ email   │
+│ senha   │                                                                                                  
+│ telefone│
+│ status  │																								
+│ validado│																								
+└┬───────┘																								
+ │
+┌┼────────┐
+│                 │                 │
                   ▼                 ▼                 ▼
         ┌─────────────────┐ ┌───────────────┐ ┌─────────────────┐
         │ PessoaDoadora   │ │    Empresa    │ │   Instituicao   │
