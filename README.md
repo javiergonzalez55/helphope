@@ -1,6 +1,6 @@
 1. Contexto
 
-   O proprietário e idealizadores do projeto HelpHope – Sistema de Intermediação de Doações identificaram a necessidade de criar uma plataforma digital capaz de conectar empresas, pessoas físicas e instituições que desejam doar ou necessitam de apoio, promovendo organização, acessibilidade, reaproveitamento de recursos, segurança e transparência no processo de doação. Atualmente, muitas empresas possuem materiais excedentes ou recursos disponíveis para doação, mas enfrentam dificuldades para direcioná-los corretamente. Da mesma forma, instituições sociais frequentemente necessitam de recursos e possuem limitações para alcançar potenciais doadores. 
+O proprietário e idealizadores do projeto HelpHope – Sistema de Intermediação de Doações identificaram a necessidade de criar uma plataforma digital capaz de conectar empresas, pessoas físicas e instituições que desejam doar ou necessitam de apoio, promovendo organização, acessibilidade, reaproveitamento de recursos, segurança e transparência no processo de doação. Atualmente, muitas empresas possuem materiais excedentes ou recursos disponíveis para doação, mas enfrentam dificuldades para direcioná-los corretamente. Da mesma forma, instituições sociais frequentemente necessitam de recursos e possuem limitações para alcançar potenciais doadores. 
 	
 2. Backlog
   ●	Cadastrar usuário (pessoas, empresas e instituições).
