@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>HelpHope - Doações</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-title">❤️ HelpHope</div>
+            <div class="header-right">
+                <span class="header-user" id="headerUser">Visitante</span>
+                <button class="btn-logout" id="btnLogout" title="Sair" style="display:none;">🚪</button>
+            </div>
+        </header>
+
+        <main class="main-content" id="mainContent">
+            <!-- Tela de Login/Cadastro -->
+            <section id="authSection" class="page active">
+                <div class="auth-container">
+                    <h2>Bem-vindo ao HelpHope</h2>
+                    <p>Conectando doadores e instituições</p>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="login">Entrar</button>
+                        <button class="tab-btn" data-tab="register">Cadastrar</button>
+                    </div>
+
+                    <div id="tabLogin" class="tab-content active">
+                        <form id="loginForm">
+                            <input type="email" id="loginEmail" placeholder="E-mail" required />
+                            <input type="password" id="loginPassword" placeholder="Senha" required />
+                            <button type="submit" class="btn-primary">Entrar</button>
+                        </form>
+                    </div>
+
+                    <div id="tabRegister" class="tab-content">
+                        <form id="registerForm">
+                            <select id="regType" required>
+                                <option value="">Tipo de usuário</option>
+                                <option value="doador">Pessoa Doadora</option>
+                                <option value="empresa">Empresa Doadora</option>
+                                <option value="instituicao">Instituição Beneficiária</option>
+                            </select>
+                            <input type="text" id="regName" placeholder="Nome / Razão Social" required />
+                            <input type="text" id="regDoc" placeholder="CPF / CNPJ" required />
+                            <input type="email" id="regEmail" placeholder="E-mail" required />
+                            <input type="tel" id="regPhone" placeholder="Telefone" required />
+                            <input type="password" id="regPassword" placeholder="Senha (mín. 8 caracteres)" required minlength="8" />
+                            <button type="submit" class="btn-primary">Cadastrar</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tela Principal (logado) -->
+            <section id="dashboardSection" class="page">
+                <nav class="bottom-nav">
+                    <button class="nav-btn active" data-page="home">🏠 Início</button>
+                    <button class="nav-btn" data-page="doacoes" id="navDoacoes">📦 Doações</button>
+                    <button class="nav-btn" data-page="solicitacoes" id="navSolicitacoes">📋 Solicitações</button>
+                    <button class="nav-btn" data-page="ranking">🏆 Ranking</button>
+                    <button class="nav-btn" data-page="historico">📜 Histórico</button>
+                    <button class="nav-btn admin-only" data-page="admin" style="display:none;">👑 Admin</button>
+                </nav>
+
+                <div class="dashboard-pages">
+                    <!-- HOME -->
+                    <div id="pageHome" class="dashboard-page active">
+                        <h2>Olá, <span id="userNameDisplay">Usuário</span>!</h2>
+                        <p class="subtitle" id="userTypeDisplay"></p>
+
+                        <div class="quick-actions" id="quickActions"></div>
+
+                        <div class="stats">
+                            <div class="stat-card">
+                                <span class="stat-number" id="totalDoacoes">0</span>
+                                <span class="stat-label">Doações</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-number" id="totalSolicitacoes">0</span>
+                                <span class="stat-label">Solicitações</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ADMIN -->
+                    <div id="pageAdmin" class="dashboard-page">
+                        <h2>👑 Painel Administrativo</h2>
+
+                        <div class="admin-tabs">
+                            <button class="admin-tab active" data-admin-tab="validar">Validar Instituições</button>
+                            <button class="admin-tab" data-admin-tab="match">Match Doação × Solicitação</button>
+                        </div>
+
+                        <div id="adminValidar" class="admin-content active">
+                            <h3>Instituições Aguardando Validação</h3>
+                            <div id="listaValidacao"></div>
+                        </div>
+
+                        <div id="adminMatch" class="admin-content">
+                            <h3>Doações Disponíveis</h3>
+                            <div id="adminDoacoesDisponiveis"></div>
+                            <h3>Solicitações Abertas</h3>
+                            <div id="adminSolicitacoesAbertas"></div>
+                        </div>
+                    </div>
+
+                    <!-- DOAÇÕES -->
+                    <div id="pageDoacoes" class="dashboard-page">
+                        <div id="doacaoArea"></div>
+                    </div>
+
+                    <!-- SOLICITAÇÕES -->
+                    <div id="pageSolicitacoes" class="dashboard-page">
+                        <div id="solicitacaoArea"></div>
+                    </div>
+
+                    <!-- RANKING -->
+                    <div id="pageRanking" class="dashboard-page">
+                        <h2>🏆 Ranking de Doadores</h2>
+                        <p>Usuários que mais contribuíram</p>
+                        <div id="listaRanking" class="ranking-list"></div>
+                    </div>
+
+                    <!-- HISTÓRICO -->
+                    <div id="pageHistorico" class="dashboard-page">
+                        <h2>📜 Histórico de Doações</h2>
+                        <p>Registro completo de todas as doações</p>
+                        <div id="listaHistorico" class="lista-items"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <span>HelpHope © 2026 - Conectando doadores</span>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
