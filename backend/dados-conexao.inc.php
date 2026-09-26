@@ -7,4 +7,3 @@ $nomeDoBanco = "helphope_db";
 $nomeDaTabelaUsuarios = "usuarios";
 $nomeDaTabelaDoacoes = "doacoes";
 $nomeDaTabelaSolicitacoes = "solicitacoes";
-?>

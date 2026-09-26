@@ -54,4 +54,3 @@ $sql = "INSERT IGNORE INTO $nomeDaTabelaUsuarios
         VALUES 
         ('admin', 'Administrador', '00000000000', 'admin@helphope.com', '(00) 00000-0000', 'admin123', 1)";
 $conexao->query($sql);
-?>

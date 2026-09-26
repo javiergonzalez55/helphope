@@ -72,4 +72,3 @@ if (empty($resposta)) {
     $resposta = ['success' => true, 'message' => 'Operação realizada com sucesso'];
     echo json_encode($resposta);
 }
-?>

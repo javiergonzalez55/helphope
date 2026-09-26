@@ -12,4 +12,3 @@ if ($conexao->query($sql)) {
     echo json_encode($resposta);
     exit;
 }
-?>

@@ -18,4 +18,3 @@ while ($row = $resultado->fetch_assoc()) {
 
 echo json_encode($ranking);
 exit;
-?>

@@ -18,4 +18,3 @@ if ($resultado) {
 
 echo json_encode($doacoes);
 exit;
-?>

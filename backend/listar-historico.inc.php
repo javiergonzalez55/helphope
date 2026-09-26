@@ -12,4 +12,3 @@ while ($row = $resultado->fetch_assoc()) {
 
 echo json_encode($historico);
 exit;
-?>
