@@ -1,0 +1,32 @@
+<?php
+require_once __DIR__ . '/config.php';
+
+$sessionUser = require_auth();
+
+$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+$statsSql = "
+SELECT
+  (SELECT COUNT(*) FROM donations WHERE user_id = :user_id) AS my_donations,
+  (SELECT COUNT(*) FROM requests WHERE user_id = :user_id) AS my_requests,
+  (SELECT COUNT(*) FROM donations WHERE status = 'disponivel') AS available_donations,
+  (SELECT COUNT(*) FROM requests WHERE status = 'aberta') AS open_requests
+";
+
+$stmt = $pdo->prepare($statsSql);
+$stmt->execute([':user_id' => (int) $sessionUser['id']]);
+$stats = $stmt->fetch();
+
+$rankingStmt = $pdo->prepare('SELECT u.name, COUNT(d.id) AS total FROM donations d INNER JOIN users u ON u.id = d.user_id WHERE d.status = :status GROUP BY u.id, u.name ORDER BY total DESC LIMIT 10');
+$rankingStmt->execute([':status' => 'concluida']);
+$ranking = $rankingStmt->fetchAll();
+
+$historyStmt = $pdo->prepare('SELECT d.title, c.name AS category_name, u.name AS donor_name, i.name AS institution_name, d.quantity, d.status, d.created_at FROM donations d INNER JOIN categories c ON c.id = d.category_id INNER JOIN users u ON u.id = d.user_id LEFT JOIN requests r ON r.id = d.id LEFT JOIN users i ON i.id = r.user_id WHERE d.status = :status ORDER BY d.created_at DESC LIMIT 10');
+$historyStmt->execute([':status' => 'concluida']);
+$history = $historyStmt->fetchAll();
+
+json_response(true, 'Dashboard carregado.', [
+    'stats' => $stats,
+    'ranking' => $ranking,
+    'history' => $history,
+], 200);
