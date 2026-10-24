@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from './services/api';
 
-const defaultAuth = {
+const emptyAuth = {
   name: '',
   document: '',
   email: '',
@@ -11,43 +11,53 @@ const defaultAuth = {
   terms_accepted: false,
 };
 
-const defaultDonation = {
+const emptyDonation = {
   category_id: '',
   title: '',
   description: '',
   quantity: '',
   unit: 'unidade',
+  status: 'disponivel',
 };
 
-const defaultRequest = {
+const emptyRequest = {
   category_id: '',
   title: '',
   description: '',
   quantity: '',
   unit: 'unidade',
+  status: 'aberta',
 };
 
 export default function App() {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('helphope_user');
-      return saved ? JSON.parse(saved) : null;
+      const raw = localStorage.getItem('helphope_user');
+      return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
   });
+
   const [authMode, setAuthMode] = useState('login');
-  const [authForm, setAuthForm] = useState(defaultAuth);
+  const [authForm, setAuthForm] = useState(emptyAuth);
   const [categories, setCategories] = useState([]);
   const [donations, setDonations] = useState([]);
   const [requests, setRequests] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
   const [dashboard, setDashboard] = useState({ stats: {}, ranking: [], history: [] });
-  const [donationForm, setDonationForm] = useState(defaultDonation);
-  const [requestForm, setRequestForm] = useState(defaultRequest);
+  const [donationForm, setDonationForm] = useState(emptyDonation);
+  const [requestForm, setRequestForm] = useState(emptyRequest);
+  const [editingDonationId, setEditingDonationId] = useState(null);
+  const [editingRequestId, setEditingRequestId] = useState(null);
+  const [categoryForm, setCategoryForm] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const isDoador = useMemo(() => user?.type === 'doador' || user?.type === 'empresa', [user]);
+  const isInstitution = user?.type === 'instituicao';
+  const isAdmin = user?.type === 'admin';
 
   useEffect(() => {
     if (!user) return;
@@ -71,7 +81,7 @@ export default function App() {
   };
 
   const loadPendingUsers = async () => {
-    if (user?.type !== 'admin') return;
+    if (!isAdmin) return;
     const response = await apiRequest('admin.php', 'GET');
     setPendingUsers(response.data?.users || []);
   };
@@ -83,12 +93,13 @@ export default function App() {
 
   const loadAllData = async () => {
     setLoading(true);
+    setError('');
     try {
       await loadCategories();
+      await loadDashboard();
       await loadDonations();
       await loadRequests();
-      await loadPendingUsers();
-      await loadDashboard();
+      if (isAdmin) await loadPendingUsers();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -96,16 +107,16 @@ export default function App() {
     }
   };
 
-  const handleAuthChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleAuthChange = (event) => {
+    const { name, value, type, checked } = event.target;
     setAuthForm((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
     setLoading(true);
     setError('');
     try {
@@ -113,11 +124,10 @@ export default function App() {
         email: authForm.email,
         password: authForm.password,
       });
-
       const currentUser = response.data?.user;
       setUser(currentUser);
       setMessage('Login realizado com sucesso.');
-      setAuthForm(defaultAuth);
+      setAuthForm(emptyAuth);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -125,8 +135,8 @@ export default function App() {
     }
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  const handleRegister = async (event) => {
+    event.preventDefault();
     setLoading(true);
     setError('');
     try {
@@ -139,10 +149,9 @@ export default function App() {
         type: authForm.type,
         terms_accepted: authForm.terms_accepted ? 1 : 0,
       });
-
       setMessage('Cadastro realizado com sucesso.');
       setAuthMode('login');
-      setAuthForm(defaultAuth);
+      setAuthForm(emptyAuth);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -150,18 +159,28 @@ export default function App() {
     }
   };
 
-  const handleDonationSubmit = async (e) => {
-    e.preventDefault();
+  const handleDonationSubmit = async (event) => {
+    event.preventDefault();
     setLoading(true);
+    setError('');
     try {
-      await apiRequest('donations.php', 'POST', {
+      const payload = {
         ...donationForm,
         quantity: Number(donationForm.quantity),
-      });
-      setDonationForm(defaultDonation);
+      };
+
+      if (editingDonationId) {
+        await apiRequest('donations.php', 'PUT', { ...payload, id: editingDonationId });
+        setMessage('Doação atualizada com sucesso.');
+      } else {
+        await apiRequest('donations.php', 'POST', payload);
+        setMessage('Doação cadastrada com sucesso.');
+      }
+
+      setDonationForm(emptyDonation);
+      setEditingDonationId(null);
       await loadDonations();
       await loadDashboard();
-      setMessage('Doação cadastrada com sucesso.');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -169,46 +188,122 @@ export default function App() {
     }
   };
 
-  const handleRequestSubmit = async (e) => {
-    e.preventDefault();
+  const handleRequestSubmit = async (event) => {
+    event.preventDefault();
     setLoading(true);
+    setError('');
     try {
-      await apiRequest('requests.php', 'POST', {
+      const payload = {
         ...requestForm,
         quantity: Number(requestForm.quantity),
-      });
-      setRequestForm(defaultRequest);
+      };
+
+      if (editingRequestId) {
+        await apiRequest('requests.php', 'PUT', { ...payload, id: editingRequestId });
+        setMessage('Solicitação atualizada com sucesso.');
+      } else {
+        await apiRequest('requests.php', 'POST', payload);
+        setMessage('Solicitação cadastrada com sucesso.');
+      }
+
+      setRequestForm(emptyRequest);
+      setEditingRequestId(null);
       await loadRequests();
       await loadDashboard();
-      setMessage('Solicitação cadastrada com sucesso.');
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const startDonationEdit = (item) => {
+    setEditingDonationId(item.id);
+    setDonationForm({
+      category_id: String(item.category_id ?? ''),
+      title: item.title,
+      description: item.description,
+      quantity: String(item.quantity),
+      unit: item.unit,
+      status: item.status,
+    });
+  };
+
+  const startRequestEdit = (item) => {
+    setEditingRequestId(item.id);
+    setRequestForm({
+      category_id: String(item.category_id ?? ''),
+      title: item.title,
+      description: item.description,
+      quantity: String(item.quantity),
+      unit: item.unit,
+      status: item.status,
+    });
   };
 
   const handleDeleteDonation = async (id) => {
-    await apiRequest('donations.php', 'DELETE', { id });
-    await loadDonations();
-    await loadDashboard();
+    try {
+      await apiRequest('donations.php', 'DELETE', { id });
+      setMessage('Doação removida com sucesso.');
+      await loadDonations();
+      await loadDashboard();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const handleDeleteRequest = async (id) => {
-    await apiRequest('requests.php', 'DELETE', { id });
-    await loadRequests();
-    await loadDashboard();
+    try {
+      await apiRequest('requests.php', 'DELETE', { id });
+      setMessage('Solicitação removida com sucesso.');
+      await loadRequests();
+      await loadDashboard();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const handleAdminAction = async (userId, action) => {
-    await apiRequest('admin.php', 'POST', { action, user_id: userId });
-    await loadPendingUsers();
-    await loadDashboard();
+  const handleCreateCategory = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      await apiRequest('categories.php', 'POST', { name: categoryForm });
+      setCategoryForm('');
+      await loadCategories();
+      setMessage('Categoria cadastrada com sucesso.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    try {
+      await apiRequest('categories.php', 'DELETE', { id });
+      await loadCategories();
+      setMessage('Categoria removida com sucesso.');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleUserAction = async (userId, action) => {
+    try {
+      await apiRequest('admin.php', 'POST', { action, user_id: userId });
+      await loadPendingUsers();
+      await loadDashboard();
+      setMessage(action === 'validate' ? 'Usuário validado.' : 'Usuário rejeitado.');
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const handleLogout = () => {
     localStorage.removeItem('helphope_user');
     setUser(null);
+    setError('');
     setMessage('Sessão encerrada.');
   };
 
@@ -225,8 +320,12 @@ export default function App() {
           </div>
 
           <div className="tabs">
-            <button className={authMode === 'login' ? 'tab active' : 'tab'} onClick={() => setAuthMode('login')}>Entrar</button>
-            <button className={authMode === 'register' ? 'tab active' : 'tab'} onClick={() => setAuthMode('register')}>Cadastrar</button>
+            <button className={authMode === 'login' ? 'tab active' : 'tab'} onClick={() => setAuthMode('login')}>
+              Entrar
+            </button>
+            <button className={authMode === 'register' ? 'tab active' : 'tab'} onClick={() => setAuthMode('register')}>
+              Cadastrar
+            </button>
           </div>
 
           {authMode === 'login' ? (
@@ -261,10 +360,6 @@ export default function App() {
       </div>
     );
   }
-
-  const isDoador = user.type === 'doador' || user.type === 'empresa';
-  const isInstitution = user.type === 'instituicao';
-  const isAdmin = user.type === 'admin';
 
   return (
     <div className="app-shell dashboard-shell">
@@ -301,79 +396,142 @@ export default function App() {
           {isAdmin && (
             <section className="panel-block">
               <h3>Painel Administrativo</h3>
-              <div className="admin-panel">
-                {pendingUsers.length === 0 ? (
-                  <p>Nenhum usuário pendente.</p>
-                ) : (
-                  pendingUsers.map((person) => (
-                    <div className="card-item" key={person.id}>
-                      <div>
-                        <strong>{person.name}</strong>
-                        <small>{person.type} · {person.email}</small>
+              <div className="admin-section">
+                <div className="mini-panel">
+                  <h4>Validar usuários</h4>
+                  {pendingUsers.length === 0 ? (
+                    <p>Nenhum usuário pendente.</p>
+                  ) : (
+                    pendingUsers.map((person) => (
+                      <div className="card-item" key={person.id}>
+                        <div>
+                          <strong>{person.name}</strong>
+                          <small>{person.type} · {person.email}</small>
+                        </div>
+                        <div className="inline-actions">
+                          <button className="small-btn success" onClick={() => handleUserAction(person.id, 'validate')}>Validar</button>
+                          <button className="small-btn danger" onClick={() => handleUserAction(person.id, 'reject')}>Rejeitar</button>
+                        </div>
                       </div>
-                      <div className="inline-actions">
-                        <button className="small-btn success" onClick={() => handleAdminAction(person.id, 'validate')}>Validar</button>
-                        <button className="small-btn danger" onClick={() => handleAdminAction(person.id, 'reject')}>Rejeitar</button>
-                      </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
+
+                <div className="mini-panel">
+                  <h4>Categorias</h4>
+                  <form onSubmit={handleCreateCategory} className="category-form">
+                    <input
+                      type="text"
+                      value={categoryForm}
+                      onChange={(event) => setCategoryForm(event.target.value)}
+                      placeholder="Nova categoria"
+                      required
+                    />
+                    <button className="primary-btn" type="submit" disabled={loading}>Salvar</button>
+                  </form>
+
+                  <div className="admin-category-list">
+                    {categories.length === 0 ? (
+                      <p>Nenhuma categoria cadastrada.</p>
+                    ) : (
+                      categories.map((category) => (
+                        <div className="category-row" key={category.id}>
+                          <span>{category.name}</span>
+                          <button className="small-btn danger" onClick={() => handleDeleteCategory(category.id)}>Excluir</button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             </section>
           )}
 
           {isDoador && (
             <section className="panel-block">
-              <h3>Nova Doação</h3>
+              <h3>{editingDonationId ? 'Editar Doação' : 'Nova Doação'}</h3>
               <form onSubmit={handleDonationSubmit} className="stack-form compact">
-                <select name="category_id" value={donationForm.category_id} onChange={(e) => setDonationForm({ ...donationForm, category_id: e.target.value })} required>
+                <select name="category_id" value={donationForm.category_id} onChange={(event) => setDonationForm({ ...donationForm, category_id: event.target.value })} required>
                   <option value="">Selecione a categoria</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>{category.name}</option>
                   ))}
                 </select>
-                <input name="title" type="text" placeholder="Título" value={donationForm.title} onChange={(e) => setDonationForm({ ...donationForm, title: e.target.value })} required />
-                <textarea name="description" placeholder="Descrição" value={donationForm.description} onChange={(e) => setDonationForm({ ...donationForm, description: e.target.value })} required />
+                <input name="title" type="text" placeholder="Título" value={donationForm.title} onChange={(event) => setDonationForm({ ...donationForm, title: event.target.value })} required />
+                <textarea name="description" placeholder="Descrição" value={donationForm.description} onChange={(event) => setDonationForm({ ...donationForm, description: event.target.value })} required />
                 <div className="double-field">
-                  <input name="quantity" type="number" min="1" step="0.01" placeholder="Quantidade" value={donationForm.quantity} onChange={(e) => setDonationForm({ ...donationForm, quantity: e.target.value })} required />
-                  <input name="unit" type="text" placeholder="Unidade" value={donationForm.unit} onChange={(e) => setDonationForm({ ...donationForm, unit: e.target.value })} required />
+                  <input name="quantity" type="number" min="1" step="0.01" placeholder="Quantidade" value={donationForm.quantity} onChange={(event) => setDonationForm({ ...donationForm, quantity: event.target.value })} required />
+                  <input name="unit" type="text" placeholder="Unidade" value={donationForm.unit} onChange={(event) => setDonationForm({ ...donationForm, unit: event.target.value })} required />
                 </div>
-                <button className="primary-btn" type="submit" disabled={loading}>Cadastrar doação</button>
+                <select name="status" value={donationForm.status} onChange={(event) => setDonationForm({ ...donationForm, status: event.target.value })}>
+                  <option value="disponivel">Disponível</option>
+                  <option value="solicitada">Solicitada</option>
+                  <option value="concluida">Concluída</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+                <div className="inline-actions">
+                  <button className="primary-btn" type="submit" disabled={loading}>{editingDonationId ? 'Salvar edição' : 'Cadastrar doação'}</button>
+                  {editingDonationId && (
+                    <button type="button" className="ghost-btn" onClick={() => { setEditingDonationId(null); setDonationForm(emptyDonation); }}>
+                      Cancelar
+                    </button>
+                  )}
+                </div>
               </form>
             </section>
           )}
 
           {isInstitution && (
             <section className="panel-block">
-              <h3>Nova Solicitação</h3>
+              <h3>{editingRequestId ? 'Editar Solicitação' : 'Nova Solicitação'}</h3>
               <form onSubmit={handleRequestSubmit} className="stack-form compact">
-                <select name="category_id" value={requestForm.category_id} onChange={(e) => setRequestForm({ ...requestForm, category_id: e.target.value })} required>
+                <select name="category_id" value={requestForm.category_id} onChange={(event) => setRequestForm({ ...requestForm, category_id: event.target.value })} required>
                   <option value="">Selecione a categoria</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>{category.name}</option>
                   ))}
                 </select>
-                <input name="title" type="text" placeholder="Título" value={requestForm.title} onChange={(e) => setRequestForm({ ...requestForm, title: e.target.value })} required />
-                <textarea name="description" placeholder="Descrição da necessidade" value={requestForm.description} onChange={(e) => setRequestForm({ ...requestForm, description: e.target.value })} required />
+                <input name="title" type="text" placeholder="Título" value={requestForm.title} onChange={(event) => setRequestForm({ ...requestForm, title: event.target.value })} required />
+                <textarea name="description" placeholder="Descrição da necessidade" value={requestForm.description} onChange={(event) => setRequestForm({ ...requestForm, description: event.target.value })} required />
                 <div className="double-field">
-                  <input name="quantity" type="number" min="1" step="0.01" placeholder="Quantidade" value={requestForm.quantity} onChange={(e) => setRequestForm({ ...requestForm, quantity: e.target.value })} required />
-                  <input name="unit" type="text" placeholder="Unidade" value={requestForm.unit} onChange={(e) => setRequestForm({ ...requestForm, unit: e.target.value })} required />
+                  <input name="quantity" type="number" min="1" step="0.01" placeholder="Quantidade" value={requestForm.quantity} onChange={(event) => setRequestForm({ ...requestForm, quantity: event.target.value })} required />
+                  <input name="unit" type="text" placeholder="Unidade" value={requestForm.unit} onChange={(event) => setRequestForm({ ...requestForm, unit: event.target.value })} required />
                 </div>
-                <button className="primary-btn" type="submit" disabled={loading}>Registrar solicitação</button>
+                <select name="status" value={requestForm.status} onChange={(event) => setRequestForm({ ...requestForm, status: event.target.value })}>
+                  <option value="aberta">Aberta</option>
+                  <option value="encerrada">Encerrada</option>
+                </select>
+                <div className="inline-actions">
+                  <button className="primary-btn" type="submit" disabled={loading}>{editingRequestId ? 'Salvar edição' : 'Registrar solicitação'}</button>
+                  {editingRequestId && (
+                    <button type="button" className="ghost-btn" onClick={() => { setEditingRequestId(null); setRequestForm(emptyRequest); }}>
+                      Cancelar
+                    </button>
+                  )}
+                </div>
               </form>
             </section>
           )}
 
           <section className="panel-block">
             <h3>Doações</h3>
-            {donations.length === 0 ? <p>Nenhuma doação cadastrada.</p> : (
+            {donations.length === 0 ? (
+              <p>Nenhuma doação cadastrada.</p>
+            ) : (
               donations.map((item) => (
                 <div className="card-item" key={item.id}>
                   <div>
                     <strong>{item.title}</strong>
-                    <small>{item.category_name} · {item.quantity} {item.unit}</small>
+                    <small>{item.category_name} · {item.quantity} {item.unit} · {item.status}</small>
                   </div>
-                  {isDoador && <button className="small-btn danger" onClick={() => handleDeleteDonation(item.id)}>Excluir</button>}
+                  <div className="inline-actions">
+                    {isDoador && (
+                      <>
+                        <button className="small-btn success" onClick={() => startDonationEdit(item)}>Editar</button>
+                        <button className="small-btn danger" onClick={() => handleDeleteDonation(item.id)}>Excluir</button>
+                      </>
+                    )}
+                  </div>
                 </div>
               ))
             )}
@@ -381,14 +539,23 @@ export default function App() {
 
           <section className="panel-block">
             <h3>Solicitações</h3>
-            {requests.length === 0 ? <p>Nenhuma solicitação encontrada.</p> : (
+            {requests.length === 0 ? (
+              <p>Nenhuma solicitação encontrada.</p>
+            ) : (
               requests.map((item) => (
                 <div className="card-item" key={item.id}>
                   <div>
                     <strong>{item.title}</strong>
-                    <small>{item.category_name} · {item.quantity} {item.unit}</small>
+                    <small>{item.category_name} · {item.quantity} {item.unit} · {item.status}</small>
                   </div>
-                  {isInstitution && <button className="small-btn danger" onClick={() => handleDeleteRequest(item.id)}>Excluir</button>}
+                  <div className="inline-actions">
+                    {isInstitution && (
+                      <>
+                        <button className="small-btn success" onClick={() => startRequestEdit(item)}>Editar</button>
+                        <button className="small-btn danger" onClick={() => handleDeleteRequest(item.id)}>Excluir</button>
+                      </>
+                    )}
+                  </div>
                 </div>
               ))
             )}
@@ -396,30 +563,41 @@ export default function App() {
 
           <section className="panel-block">
             <h3>Ranking</h3>
-            {dashboard.ranking?.length ? dashboard.ranking.map((item, index) => (
-              <div className="rank-item" key={index}><span>{index + 1}º</span> <strong>{item.name}</strong> <small>{item.total} doações</small></div>
-            )) : <p>Ranking indisponível.</p>}
+            {dashboard.ranking?.length ? (
+              dashboard.ranking.map((item, index) => (
+                <div className="rank-item" key={`${item.name}-${index}`}>
+                  <span>{index + 1}º</span>
+                  <strong>{item.name}</strong>
+                  <small>{item.total} doações</small>
+                </div>
+              ))
+            ) : (
+              <p>Ranking indisponível.</p>
+            )}
           </section>
 
           <section className="panel-block">
             <h3>Histórico</h3>
-            {dashboard.history?.length ? dashboard.history.map((item, index) => (
-              <div className="card-item" key={index}>
-                <div>
-                  <strong>{item.title}</strong>
-                  <small>{item.category_name} · {item.donor_name}</small>
+            {dashboard.history?.length ? (
+              dashboard.history.map((item, index) => (
+                <div className="card-item" key={`${item.title}-${index}`}>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <small>{item.category_name} · {item.donor_name}</small>
+                  </div>
                 </div>
-              </div>
-            )) : <p>Nenhum histórico.</p>}
+              ))
+            ) : (
+              <p>Nenhum histórico.</p>
+            )}
           </section>
         </main>
       </div>
 
       {(message || error) && (
-        <div className="toast">
-          {error || message}
-        </div>
+        <div className="toast">{error || message}</div>
       )}
     </div>
   );
 }
+
