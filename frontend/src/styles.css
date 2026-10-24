@@ -1,24 +1,373 @@
-const API_BASE = 'http://localhost/helphope/backend/api';
+:root {
+  --bg: #f7f4f2;
+  --panel: #ffffff;
+  --primary: #d94a3d;
+  --primary-dark: #b93b2f;
+  --secondary: #f3e4df;
+  --text: #1f1f1f;
+  --muted: #7a7a7a;
+  --line: #ece4e2;
+  --success: #2fa56d;
+  --danger: #d93c3c;
+  --shadow: 0 12px 28px rgba(30, 23, 22, 0.08);
+}
 
-export async function apiRequest(endpoint, method = 'GET', body = null) {
-  const options = {
-    method,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
+* {
+  box-sizing: border-box;
+}
 
-  if (body !== null) {
-    options.body = JSON.stringify(body);
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(180deg, #f8f1ef 0%, #f2efef 100%);
+  color: var(--text);
+}
+
+body {
+  min-height: 100vh;
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.auth-shell {
+  display: grid;
+  place-items: center;
+}
+
+.auth-card {
+  width: min(100%, 440px);
+  background: var(--panel);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 28px 24px;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.brand-mark {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--primary), #ef6a4d);
+  color: white;
+  font-size: 28px;
+}
+
+.brand-row h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: var(--primary);
+}
+
+.brand-row small {
+  color: var(--muted);
+}
+
+.tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.tab {
+  flex: 1;
+  border: none;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f4f0ef;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.tab.active {
+  background: var(--primary);
+  color: white;
+}
+
+.stack-form {
+  display: grid;
+  gap: 12px;
+}
+
+.stack-form input,
+.stack-form textarea,
+.stack-form select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+}
+
+.stack-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.primary-btn,
+.ghost-btn,
+.small-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.primary-btn {
+  background: var(--primary);
+  color: #fff;
+}
+
+.primary-btn:hover {
+  background: var(--primary-dark);
+}
+
+.ghost-btn {
+  background: #f5f0ee;
+  color: var(--text);
+}
+
+.small-btn {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+.small-btn.success {
+  background: var(--success);
+  color: white;
+}
+
+.small-btn.danger {
+  background: var(--danger);
+  color: white;
+}
+
+.dashboard-shell {
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.topbar strong {
+  display: block;
+  color: var(--primary);
+  font-size: 1.5rem;
+}
+
+.topbar small {
+  color: var(--muted);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 20px;
+}
+
+.side-panel,
+.main-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.side-panel {
+  background: var(--panel);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  align-content: start;
+}
+
+.side-panel h3,
+.panel-block h3,
+.panel-block h4 {
+  margin: 0 0 12px;
+}
+
+.stat-box {
+  display: grid;
+  gap: 5px;
+  background: var(--secondary);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.stat-box span {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.panel-block {
+  background: var(--panel);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.admin-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.mini-panel {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  background: #fcfaf9;
+}
+
+.admin-category-list,
+.card-item,
+.rank-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.card-item,
+.rank-item {
+  background: #faf8f7;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+
+.card-item > div,
+.rank-item > strong {
+  display: grid;
+  gap: 4px;
+}
+
+.card-item small,
+.rank-item small {
+  color: var(--muted);
+}
+
+.inline-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.category-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+
+.compact {
+  max-width: 650px;
+}
+
+.double-field {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.success-box,
+.error-box,
+.toast {
+  margin-top: 16px;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 600;
+}
+
+.success-box {
+  background: rgba(47, 165, 109, 0.12);
+  color: var(--success);
+}
+
+.error-box,
+.toast {
+  background: rgba(217, 60, 60, 0.1);
+  color: var(--danger);
+}
+
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  max-width: 320px;
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 580px) {
+  .app-shell {
+    padding: 16px;
   }
 
-  const response = await fetch(`${API_BASE}/${endpoint}`, options);
-  const result = await response.json().catch(() => ({ success: false, message: 'Resposta inválida.' }));
-
-  if (!response.ok || result.success === false) {
-    throw new Error(result.message || 'Erro ao processar a requisição.');
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  return result;
+  .double-field,
+  .category-form {
+    grid-template-columns: 1fr;
+  }
 }
